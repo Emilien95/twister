@@ -22,9 +22,11 @@ public class Main {
 		Behavior[] bArray= {b1};
 		Arbitrator arby= new Arbitrator(bArray);
 		arby.go();
+		try {
+			Thread.sleep(300);
+		} catch (InterruptedException e) {}
 		
-		Button.RIGHT.waitForPressAndRelease();
-		b1.suppress();
+		arby.stop(); //marche pas, fonctionne si B1.action() et b1.suppress()
 	}
 
 }

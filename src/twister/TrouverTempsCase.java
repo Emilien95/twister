@@ -19,13 +19,6 @@ public class TrouverTempsCase implements Behavior {
 		Motor.C.setSpeed(100);
 		Motor.B.forward();
 		Motor.C.forward();
-		
-		EV3ColorSensor capteurCouleur;
-		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
-		if(capteurCouleur.getColorID() == lejos.robotics.Color.BLACK) {
-			capteurCouleur.close();
-			this.suppress();
-		}
 	}
 
 	@Override
