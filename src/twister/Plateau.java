@@ -3,12 +3,13 @@ package twister;
 import twister.Robot;
 import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
+import lejos.hardware.motor.Motor;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
 
 public class Plateau {
 
-	private int distDroit;
+	private int tempsCase;
 	private int distTourne;
 	private Robot jon;
 	private Robot daenerys;
@@ -23,12 +24,12 @@ public class Plateau {
 	}
 	
 	/*Setter et guetter*/
-	public int getDistDroit() {
-		return distDroit;
+	public int getTempsCase() {
+		return tempsCase;
 	}
 	
-	public void setDistDroit(int distDroit) {
-		this.distDroit = distDroit;
+	public void setTempsCase(int tempsCase) {
+		this.tempsCase = tempsCase;
 	}
 	
 	public int getDistTourne() {
@@ -112,38 +113,94 @@ public class Plateau {
 		capteurCouleur.close();
 	}
 	
-	public String compareColor(int tab[3]) {
+	public String compareColor(int[] tab) {
 		int difMin = 100;
 		int indice = -1;
+		String result;
 		for(int i=0;i<6;i++) {
-			int dif = abs((seuil[i][0]+seuil[i][1]+seuil[i][2])-(tab[0]+tab[1]+tab[2]));
-			if(seuil<difMin) {
-				difMin = seuil;
+			int dif = (seuil[i][0]+seuil[i][1]+seuil[i][2])-(tab[0]+tab[1]+tab[2]);
+			if(dif<0) {
+				dif = -dif;
+			}
+			if(dif<difMin) {
+				difMin = dif;
 				indice = i;
 			}
 		}
 		switch (indice) {
 		case 0 :
-			return "bleu";
+			result = "bleu";
 			break;
 		case 1 :
-			return "rouge";
+			result =  "rouge";
 			break;
 		case 2 :
-			return "orange";
+			result =  "orange";
 			break;
 		case 3 :
-			return "vert";
+			result =  "vert";
 			break;
 		case 4 :
-			return "blanc";
+			result =  "blanc";
 			break;
 		case 5 :
-			return "noir";
+			result =  "noir";
 			break;
 		default :
-			return "erreur de couleur";
+			result =  "erreur de couleur";
 			break;
 		}
+		return result;
+	}
+
+	public void parcourtCase() {
+
+		EV3ColorSensor capteurCouleur;
+		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
+		
+		boolean trouve = false;
+		int temps = 0;
+		
+		Motor.B.setSpeed(100);
+		Motor.C.setSpeed(100);
+		
+		for(int i=0;i<15;i++) { 
+			if(!trouve) {
+				Motor.B.forward();
+				Motor.C.forward();
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {}
+				Motor.B.stop(true);
+				Motor.C.stop(true);
+			
+				temps = temps+100;
+				
+				LCD.drawString(""+capteurCouleur.getColorID()+"",0,1);
+				LCD.refresh();
+			
+				if(capteurCouleur.getColorID() == lejos.robotics.Color.BLACK) {
+					trouve = true;
+					tempsCase = temps;
+					LCD.clear();
+					LCD.drawString("noir",0,0);
+					LCD.refresh();
+					Button.RIGHT.waitForPressAndRelease();
+				}
+			}
+		}
+		
+		/*Motor.B.forward();
+		Motor.C.forward();
+		try {
+			Thread.sleep(temps);
+		} catch (InterruptedException e) {}
+		Motor.B.stop(true);
+		Motor.C.stop(true);*/
+		capteurCouleur.close();
+	}
+	
+	public void cartographie() {
+		
 	}
 }
