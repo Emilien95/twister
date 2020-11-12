@@ -1,10 +1,12 @@
 package twister;
 
-import twister.Plateau;
 import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
+import lejos.robotics.subsumption.Arbitrator;
+import lejos.robotics.subsumption.Behavior;
 
 public class Main {
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
@@ -16,7 +18,13 @@ public class Main {
 		LCD.refresh();
 		Button.RIGHT.waitForPressAndRelease();
 		LCD.clear();
-		p.parcourtCase();
+		Behavior b1 = new TrouverTempsCase();
+		Behavior[] bArray= {b1};
+		Arbitrator arby= new Arbitrator(bArray);
+		arby.go();
 		
+		Button.RIGHT.waitForPressAndRelease();
+		b1.suppress();
 	}
+
 }
