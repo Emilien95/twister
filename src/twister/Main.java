@@ -18,15 +18,8 @@ public class Main {
 		LCD.refresh();
 		Button.RIGHT.waitForPressAndRelease();
 		LCD.clear();
-		Behavior b1 = new TrouverTempsCase();
-		Behavior[] bArray= {b1};
-		Arbitrator arby= new Arbitrator(bArray);
-		arby.go();
-		try {
-			Thread.sleep(300);
-		} catch (InterruptedException e) {}
-		
-		arby.stop(); //marche pas, fonctionne si B1.action() et b1.suppress()
+		p.parcourtCase();
+		//arby.stop(); marche pas, fonctionne si B1.action() et b1.suppress()
 	}
 
 }

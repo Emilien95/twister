@@ -6,6 +6,11 @@ import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.Motor;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.robotics.chassis.Chassis;
+import lejos.robotics.chassis.Wheel;
+import lejos.robotics.chassis.WheeledChassis;
+import lejos.robotics.navigation.MovePilot;
+import lejos.robotics.subsumption.Behavior;
 
 public class Plateau {
 
@@ -154,49 +159,33 @@ public class Plateau {
 	}
 
 	public void parcourtCase() {
+		Wheel wheel1 = WheeledChassis.modelWheel(Motor.B, 56.).offset(-60);
+		Wheel wheel2 = WheeledChassis.modelWheel(Motor.C, 56.).offset(60);
+		Chassis chassis= new WheeledChassis(new Wheel[]{wheel1, wheel2}, 2); 
+		MovePilot pilot = new MovePilot(chassis);
+		pilot.setLinearSpeed(30.);
 
 		EV3ColorSensor capteurCouleur;
 		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
 		
 		boolean trouve = false;
-		int temps = 0;
 		
-		Motor.B.setSpeed(100);
-		Motor.C.setSpeed(100);
-		
-		for(int i=0;i<15;i++) { 
-			if(!trouve) {
-				Motor.B.forward();
-				Motor.C.forward();
-				try {
-					Thread.sleep(300);
-				} catch (InterruptedException e) {}
-				Motor.B.stop(true);
-				Motor.C.stop(true);
+		Behavior b1 = new TrouverTempsCase();
+		while(!trouve) { 
+			b1.action();
+			LCD.clear();
+			LCD.drawString(""+capteurCouleur.getColorID()+"",0,1);
+			LCD.refresh();
 			
-				temps = temps+100;
-				
-				LCD.drawString(""+capteurCouleur.getColorID()+"",0,1);
+			if(capteurCouleur.getColorID() == lejos.robotics.Color.BLACK) {
+				trouve = true;
+				LCD.clear();
+				LCD.drawString("Distance="+pilot.getMovement().getDistanceTraveled(),0,0);
 				LCD.refresh();
-			
-				if(capteurCouleur.getColorID() == lejos.robotics.Color.BLACK) {
-					trouve = true;
-					tempsCase = temps;
-					LCD.clear();
-					LCD.drawString("noir",0,0);
-					LCD.refresh();
-					Button.RIGHT.waitForPressAndRelease();
-				}
 			}
 		}
-		
-		/*Motor.B.forward();
-		Motor.C.forward();
-		try {
-			Thread.sleep(temps);
-		} catch (InterruptedException e) {}
-		Motor.B.stop(true);
-		Motor.C.stop(true);*/
+		b1.suppress();
+		Button.RIGHT.waitForPressAndRelease();
 		capteurCouleur.close();
 	}
 	
