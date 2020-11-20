@@ -2,6 +2,8 @@ package twister;
 
 import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.robotics.subsumption.Arbitrator;
 import lejos.robotics.subsumption.Behavior;
 
@@ -12,14 +14,13 @@ public class Main {
 		
 		Button.RIGHT.waitForPressAndRelease();
 		Plateau p = new Plateau();
-		
+		p.seuil();
 		LCD.drawString("ligne noire",0,1);
 		LCD.drawString("+ bouton droit", 0, 2);
 		LCD.refresh();
 		Button.RIGHT.waitForPressAndRelease();
 		LCD.clear();
 		p.parcourtCase();
-		//arby.stop(); marche pas, fonctionne si B1.action() et b1.suppress()
 	}
 
 }

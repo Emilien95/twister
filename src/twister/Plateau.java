@@ -19,7 +19,7 @@ public class Plateau {
 	private Robot jon;
 	private Robot daenerys;
 	private int[][] map = new int[5][7];
-	private int[][] seuil = new int[6][3]; 
+	private int[] seuil = new int[6]; 
 	/*seuil[0] : bleu ; seuil[1] : rouge ; seuil[2] : orange ; seuil[3] : vert ; seuil[4] : blanc ; seuil[5] : noir*/
 	
 	/*Constructeur*/
@@ -105,11 +105,10 @@ public class Plateau {
 			Button.RIGHT.waitForPressAndRelease();
 			LCD.clear();
 			float[] tab = new float[3]; 
-			capteurCouleur.getRGBMode().fetchSample(tab, 0); 
-			for (int j=0;j<3;j++) { 
-				float color= tab[j]*1000; 
-				seuil[i][j] = (int)color;
-			} 
+			capteurCouleur.getRGBMode().fetchSample(tab, 0);
+			float color= tab[0]+(tab[1]*10)+(tab[2]*100); 
+			seuil[i] = (int)color;
+
 			LCD.drawString("Bouton droit",0,0);
 			Button.RIGHT.waitForPressAndRelease();
 			LCD.clear();
@@ -118,17 +117,25 @@ public class Plateau {
 		capteurCouleur.close();
 	}
 	
-	public String compareColor(int[] tab) {
-		int difMin = 100;
-		int indice = -1;
+	public String compareCouleur(float[] tab) {
 		String result;
-		for(int i=0;i<6;i++) {
-			int dif = (seuil[i][0]+seuil[i][1]+seuil[i][2])-(tab[0]+tab[1]+tab[2]);
-			if(dif<0) {
-				dif = -dif;
+		
+		float color= tab[0]+(tab[1]*10)+(tab[2]*100); 
+		int valeurAcomparer = (int)color;
+		
+		int differenceMin = valeurAcomparer - seuil[0];
+		if(differenceMin<0) {
+			differenceMin = -differenceMin;
+		}
+		int indice = 0;
+		
+		for(int i=1;i<6;i++) {
+			int difference = valeurAcomparer - seuil[i];
+			if(difference<0) {
+				difference = -difference;
 			}
-			if(dif<difMin) {
-				difMin = dif;
+			if(difference<differenceMin) {
+				differenceMin = difference;
 				indice = i;
 			}
 		}
@@ -159,37 +166,49 @@ public class Plateau {
 	}
 
 	public void parcourtCase() {
-		Wheel wheel1 = WheeledChassis.modelWheel(Motor.B, 56.).offset(-60);
-		Wheel wheel2 = WheeledChassis.modelWheel(Motor.C, 56.).offset(60);
-		Chassis chassis= new WheeledChassis(new Wheel[]{wheel1, wheel2}, 2); 
-		MovePilot pilot = new MovePilot(chassis);
-		pilot.setLinearSpeed(30.);
 
 		EV3ColorSensor capteurCouleur;
 		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
 		
-		boolean trouve = false;
+		boolean trouveAutreCouleur = false;
+		boolean trouveNoir = false;
+		long temp = 0;
 		
 		Behavior b1 = new TrouverTempsCase();
-		while(!trouve) { 
-			b1.action();
-			LCD.clear();
-			LCD.drawString(""+capteurCouleur.getColorID()+"",0,1);
-			LCD.refresh();
+		Chrono timer = new Chrono();
+		b1.action();
+		timer.start();
+		while(!trouveNoir) { 
+			float[] tab = new float[3]; 
+			capteurCouleur.getRGBMode().fetchSample(tab, 0);
 			
-			if(capteurCouleur.getColorID() == lejos.robotics.Color.BLACK) {
-				trouve = true;
-				LCD.clear();
-				LCD.drawString("Distance="+pilot.getMovement().getDistanceTraveled(),0,0);
-				LCD.refresh();
+			if(this.compareCouleur(tab) != "noir") {
+				trouveAutreCouleur = true;
+			}
+			
+			if(this.compareCouleur(tab) == "noir" && trouveAutreCouleur) {
+				trouveNoir = true;
 			}
 		}
+		b1.suppress();
+		timer.stop();
+		LCD.clear();
+		LCD.drawString(""+timer.getDureeMs()+"",0,1);
+		LCD.refresh();
+		temp = timer.getDureeMs();
+		Button.RIGHT.waitForPressAndRelease();
+		b1.action();
+		try{Thread.sleep(temp);} catch(InterruptedException e) {}
 		b1.suppress();
 		Button.RIGHT.waitForPressAndRelease();
 		capteurCouleur.close();
 	}
 	
 	public void cartographie() {
-		
+		LCD.drawString("Case rouge", 0, 1);
+		LCD.refresh();
+		Button.RIGHT.waitForPressAndRelease();
+		LCD.clear();
+	
 	}
 }
