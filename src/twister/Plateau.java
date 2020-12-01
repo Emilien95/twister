@@ -6,19 +6,14 @@ import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.Motor;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
-import lejos.robotics.chassis.Chassis;
-import lejos.robotics.chassis.Wheel;
-import lejos.robotics.chassis.WheeledChassis;
-import lejos.robotics.navigation.MovePilot;
 import lejos.robotics.subsumption.Behavior;
 
 public class Plateau {
 
-	private int tempsCase;
-	private int distTourne;
+	private long tempsCase;
 	private Robot jon;
 	private Robot daenerys;
-	private int[][] map = new int[5][7];
+	private String[][] map = new String[5][7];
 	private int[] seuil = new int[6]; 
 	/*seuil[0] : bleu ; seuil[1] : rouge ; seuil[2] : orange ; seuil[3] : vert ; seuil[4] : blanc ; seuil[5] : noir*/
 	
@@ -29,20 +24,12 @@ public class Plateau {
 	}
 	
 	/*Setter et guetter*/
-	public int getTempsCase() {
+	public long getTempsCase() {
 		return tempsCase;
 	}
 	
 	public void setTempsCase(int tempsCase) {
 		this.tempsCase = tempsCase;
-	}
-	
-	public int getDistTourne() {
-		return distTourne;
-	}
-	
-	public void setDistTourne(int distTourne) {
-		this.distTourne = distTourne;
 	}
 	
 	public Robot getJon() {
@@ -61,11 +48,11 @@ public class Plateau {
 		this.daenerys = daenerys;
 	}
 	
-	public int[][] getMap() {
+	public String[][] getMap() {
 		return map;
 	}
 	
-	public void setMap(int[][] map) {
+	public void setMap(String[][] map) {
 		this.map = map;
 	} 
 	
@@ -108,10 +95,6 @@ public class Plateau {
 			capteurCouleur.getRGBMode().fetchSample(tab, 0);
 			float color= tab[0]+(tab[1]*10)+(tab[2]*100); 
 			seuil[i] = (int)color;
-
-			LCD.drawString("Bouton droit",0,0);
-			Button.RIGHT.waitForPressAndRelease();
-			LCD.clear();
 		}
 		
 		capteurCouleur.close();
@@ -169,46 +152,216 @@ public class Plateau {
 
 		EV3ColorSensor capteurCouleur;
 		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
-		
 		boolean trouveAutreCouleur = false;
 		boolean trouveNoir = false;
-		long temp = 0;
-		
-		Behavior b1 = new TrouverTempsCase();
+		float[] rgbValeur = new float[3];
+		Behavior avancer = new Avancer();
+		Behavior reculer = new Reculer();
 		Chrono timer = new Chrono();
-		b1.action();
-		timer.start();
+		
+		//Il avance jusqu'à la ligne noir
+		avancer.action();
 		while(!trouveNoir) { 
-			float[] tab = new float[3]; 
-			capteurCouleur.getRGBMode().fetchSample(tab, 0);
-			
-			if(this.compareCouleur(tab) != "noir") {
-				trouveAutreCouleur = true;
-			}
-			
-			if(this.compareCouleur(tab) == "noir" && trouveAutreCouleur) {
+			capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+					
+			if(this.compareCouleur(rgbValeur) == "noir") {
 				trouveNoir = true;
 			}
 		}
-		b1.suppress();
+		avancer.suppress();
+		trouveNoir = false;
+								
+		//Parcourt la case
+		avancer.action();
+		timer.start();
+		while(!trouveNoir) { 
+			capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+			
+			if(this.compareCouleur(rgbValeur) != "noir") {
+				trouveAutreCouleur = true;
+			}
+			
+			if(this.compareCouleur(rgbValeur) == "noir" && trouveAutreCouleur) {
+				trouveNoir = true;
+			}
+		}
+		avancer.suppress();
 		timer.stop();
 		LCD.clear();
 		LCD.drawString(""+timer.getDureeMs()+"",0,1);
 		LCD.refresh();
-		temp = timer.getDureeMs();
-		Button.RIGHT.waitForPressAndRelease();
-		b1.action();
-		try{Thread.sleep(temp);} catch(InterruptedException e) {}
-		b1.suppress();
-		Button.RIGHT.waitForPressAndRelease();
+		tempsCase = timer.getDureeMs();
+		
+		//Il recule jusqu'à être au milieu de la case de départ
+		long temps = tempsCase + (tempsCase/2);
+		reculer.action();
+		try{Thread.sleep(temps);} catch(InterruptedException e) {}
+		reculer.suppress();
+		
 		capteurCouleur.close();
+		
 	}
 	
 	public void cartographie() {
-		LCD.drawString("Case rouge", 0, 1);
-		LCD.refresh();
-		Button.RIGHT.waitForPressAndRelease();
-		LCD.clear();
+		//Cartographie : parcourt "en escargot"
+		//Première colonne
+		parcourtColonne(0, 6, -1, -1);
+		tourneDroite();
+		//Première ligne 
+		parcourtLigne(1, 0, 5, 1);
+		tourneDroite();		
+		//Cinquième colonne
+		parcourtColonne(4, 1, 7, 1);
+		tourneDroite();
+		//Septième ligne 
+		parcourtLigne(3, 6, 0, -1);
+		tourneDroite();
+		//Deuxième colonne 
+		parcourtColonne(1, 5, 0, -1);
+		tourneDroite();
+		//Deuxième ligne  
+		parcourtLigne(2, 1, 4, 1);
+		tourneDroite();
+		//Quatrième colonne 
+		parcourtColonne(3, 2, 6, 1);
+		tourneDroite();
+		//Sixième ligne 
+		parcourtLigne(2, 5, 1, -1);
+		tourneDroite();
+		//Troisième colonne
+		parcourtColonne(2, 4, 1, -1);
+	}
 	
+	public void tourneDroite() {
+
+		EV3ColorSensor capteurCouleur;
+		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
+		
+		//Avance d'une demie case
+		long tempsTourne = tempsCase/2;
+		Behavior avancer = new Avancer();
+		avancer.action();
+		try{Thread.sleep(tempsTourne);} catch(InterruptedException e) {}
+		avancer.suppress();
+		
+		//Tourne à droite
+		Motor.B.setSpeed(100);
+		Motor.B.rotate(386);
+		
+		//Avance un peu pour être sûr de ne pas être sur une ligne noire
+		//A voir si necessaire 
+		avancer.action();
+		try{Thread.sleep(tempsCase/4);} catch(InterruptedException e) {}
+		avancer.suppress();
+		
+		//Avance jusqu'à la prochaine ligne noire
+		avancer.action();
+		boolean trouveNoir = false;
+		while(!trouveNoir) { 
+			float[] tab = new float[3]; 
+			capteurCouleur.getRGBMode().fetchSample(tab, 0);
+			if(this.compareCouleur(tab) == "noir") {
+				trouveNoir = true;
+			}
+		}
+		avancer.suppress();
+		
+		//Recule au milieu de la case
+		Behavior reculer = new Reculer();
+		reculer.action();
+		try{Thread.sleep(tempsTourne);} catch(InterruptedException e) {}
+		reculer.suppress();
+		
+		capteurCouleur.close();
+	}
+	
+	
+	//i: indice ligne, j:indice colonne, n:indice à ne pas dépasser dans la boucle, d:direction
+	public void parcourtColonne(int i, int j, int n, int d) {
+
+		EV3ColorSensor capteurCouleur;
+		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
+		Behavior avancer = new Avancer();
+		float[] rgbValeur = new float[3]; 
+		
+		capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+		map[i][j] = this.compareCouleur(rgbValeur);
+		LCD.clear();
+		LCD.drawString(this.compareCouleur(rgbValeur), 0, 1);
+		LCD.refresh();
+		
+		if(d==1) { //Vers le bas
+			for(int y=j+1;y<n;y++) {
+				avancer.action();
+				try{Thread.sleep(tempsCase);} catch(InterruptedException e) {}
+				avancer.suppress();
+				
+				capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+				map[i][y] = this.compareCouleur(rgbValeur);
+				LCD.clear();
+				LCD.drawString(this.compareCouleur(rgbValeur), 0, 1);
+				LCD.refresh();
+			}
+		} else if(d==-1) { //Vers le haut
+			
+			for(int y=j-1;y>n;y--) { 
+				avancer.action();
+				try{Thread.sleep(tempsCase);} catch(InterruptedException e) {}
+				avancer.suppress();
+				
+				capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+				map[i][y] = this.compareCouleur(rgbValeur);
+				LCD.clear();
+				LCD.drawString(this.compareCouleur(rgbValeur), 0, 1);
+				LCD.refresh();
+			}
+		}
+		
+		capteurCouleur.close();
+	}
+	
+	
+	public void parcourtLigne(int i, int j, int n, int d) {
+
+		EV3ColorSensor capteurCouleur;
+		capteurCouleur= new EV3ColorSensor(SensorPort.S3);
+		Behavior avancer = new Avancer();
+		float[] rgbValeur = new float[3]; 
+		
+
+		capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+		map[i][j] = this.compareCouleur(rgbValeur);
+		LCD.clear();
+		LCD.drawString(this.compareCouleur(rgbValeur), 0, 1);
+		LCD.refresh();
+		
+		if(d==1) { //Vers le bas
+			for(int x=i+1;x<n;x++) {
+				avancer.action();
+				try{Thread.sleep(tempsCase);} catch(InterruptedException e) {}
+				avancer.suppress();
+				
+				capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+				map[x][j] = this.compareCouleur(rgbValeur);
+				LCD.clear();
+				LCD.drawString(this.compareCouleur(rgbValeur), 0, 1);
+				LCD.refresh();
+			}
+		} else if(d==-1) { //Vers le haut
+			
+			for(int x=i-1;x>n;x--) { 
+				avancer.action();
+				try{Thread.sleep(tempsCase);} catch(InterruptedException e) {}
+				avancer.suppress();
+				
+				capteurCouleur.getRGBMode().fetchSample(rgbValeur, 0);
+				map[x][j] = this.compareCouleur(rgbValeur);
+				LCD.clear();
+				LCD.drawString(this.compareCouleur(rgbValeur), 0, 1);
+				LCD.refresh();
+			}
+		}
+		
+		capteurCouleur.close();
 	}
 }

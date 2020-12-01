@@ -3,7 +3,9 @@ package twister;
 import lejos.hardware.motor.Motor;
 import lejos.robotics.subsumption.Behavior;
 
-public class Avancer implements Behavior {
+public class Reculer implements Behavior {
+
+	public Reculer() {}
 
 	@Override
 	public boolean takeControl() {
@@ -15,8 +17,8 @@ public class Avancer implements Behavior {
 	public void action() {
 		Motor.B.setSpeed(100);
 		Motor.C.setSpeed(100);
-		Motor.B.forward();
-		Motor.C.forward();
+		Motor.B.backward();
+		Motor.C.backward();
 	}
 
 	@Override
@@ -24,5 +26,4 @@ public class Avancer implements Behavior {
 		Motor.B.stop(true);
 		Motor.C.stop(true);
 	}
-
 }

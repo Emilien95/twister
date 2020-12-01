@@ -2,8 +2,6 @@ package twister;
 
 import lejos.hardware.Button;
 import lejos.hardware.lcd.LCD;
-import lejos.hardware.port.SensorPort;
-import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.robotics.subsumption.Arbitrator;
 import lejos.robotics.subsumption.Behavior;
 
@@ -13,14 +11,24 @@ public class Main {
 		// TODO Auto-generated method stub
 		
 		Button.RIGHT.waitForPressAndRelease();
-		Plateau p = new Plateau();
-		p.seuil();
-		LCD.drawString("ligne noire",0,1);
-		LCD.drawString("+ bouton droit", 0, 2);
+		
+		Behavior stop = new StopProgramme(); 
+		Behavior vide = new Vide();
+		/*Behavior[] bArray= {vide, stop}; // du moins prioritaire au plus prioritaire
+		Arbitrator arby= new Arbitrator(bArray);
+		arby.go();
+		Button.RIGHT.waitForPressAndRelease();*/
+		
+		Plateau board = new Plateau();
+		//Apprentissage des couleurs 
+		board.seuil();
+		//Cartographie
+		LCD.drawString("Case rouge", 0, 1);
 		LCD.refresh();
 		Button.RIGHT.waitForPressAndRelease();
-		LCD.clear();
-		p.parcourtCase();
+		board.parcourtCase();
+		board.cartographie();
+		
 	}
 
 }
