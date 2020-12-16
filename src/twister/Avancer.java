@@ -7,7 +7,6 @@ public class Avancer implements Behavior {
 
 	@Override
 	public boolean takeControl() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

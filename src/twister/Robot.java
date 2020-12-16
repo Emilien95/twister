@@ -4,16 +4,26 @@ public class Robot {
 
 	private int abs;
 	private int ord;
-	private int direction;  /*1 pour haut, 2 pour droite, 3 pour bas, 4 pour gauche */
-	private String couleurCase;
+	private int direction;  /*1:haut, -1:bas, 2:droite, -2:gauche*/
+	private String adresse;
 	
+	//Constructeur
 	public Robot (int abscisse, int ordonnee, int direction) {
 		this.abs = abscisse;
 		this.ord = ordonnee;
 		this.direction = direction;
-		this.couleurCase = "rouge";
+		this.adresse = "";
 	}
 	
+	//Guetter et Setter
+	public String getAdresse() {
+		return adresse;
+	}
+
+	public void setAdresse(String adresse) {
+		this.adresse = adresse;
+	}
+
 	public int getDirection() {
 		return direction;
 	}
